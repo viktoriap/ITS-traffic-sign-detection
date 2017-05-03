@@ -1,0 +1,62 @@
+0;Bumpy road
+1;Speed bump
+2;Slippery road
+3;Dangerous curve to the left
+4;Dangerous curve to the right
+5;Double dangerous curve to the left
+6;Double dangerous curve to the right
+7;Presence of children
+8;Bicycle crossing
+9;Cattle crossing
+10;Road works
+11;Traffic lights
+12;Railway crossing wiht gates
+13;Caution sign
+14;Road narrows
+15;Road narrows from the left
+16;Road narrows from the right
+17;Priority at the next intersection
+18;Intersection with priority to the right
+19;Give way
+20;Narrow passage, give way to traffic from opposite side
+21;Stop and give way
+22;No entry
+23;No entry for bicycles
+24;No entry for vehicles with more mass than indicated
+25;No entry for vecicles used for goods transport
+26;No entry for vehicles which are wider than indicated
+27;No entry for vehicles which are highed than indicated
+28;No entry in both directions
+29;No left turn
+30;No right turn
+31;No overtaking of vehicles with more than two wheels until the next intersection
+32;Maximum speed limit
+33;Mandatory way for pedestrians and bicycles
+34;Mandatory direction (straight)
+35;Mandatory direction (left)
+36;Mandatory directions (straight and right)
+37;Roundabout
+38;Mandatory cycleway
+39;Path shared between pedestrians, bicycles and mopeds class A 
+40;No parking allowed
+41;No parking or waiting allowed
+42;No parking from the 1st to the 15th of the month 
+43;No parking from the 16th to the end of the month 
+44;Narrow passage, priority over oncoming traffic
+45;Parking allowed
+46;Additional parking sign for handicap only
+47;Parking exclusively for motorcycles, motorcars and minibuses
+48;Parking exclusively for lorries
+49;Parking exclusively for buses/coaches
+50;Parking mandatory on pavement or verge
+51;Beginning of a residential area
+52;End of a residential area
+53;Road with oneway traffic
+54;No exit/Dead end
+55;End of road works
+56;Pedestrian crossing
+57;Bicycle and moped crossing
+58;Indicating parking
+59;Speed bump
+60;End of priority road
+61;Priority road
