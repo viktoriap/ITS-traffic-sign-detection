@@ -22,4 +22,11 @@ def load_data(dir):
     return images, labels
 
 
-load_data(training_dir)
+def resize_images(images, width=32, height=32):
+    for image in images:
+        image = cv2.resize(image, (width, height), interpolation=cv2.INTER_CUBIC)
+    return images
+
+
+images, labels = load_data(training_dir)
+resized_images = resize_images(images)
