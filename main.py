@@ -45,9 +45,6 @@ def display_images_and_labels(images, labels):
     plt.show()
 
 
-images, labels = load_data(training_dir)
-resized_images = resize_images(images)
-
 # Create a graph to hold the model.
 graph = tf.Graph()
 
@@ -82,24 +79,26 @@ with graph.as_default():
 session = tf.Session(graph=graph)
 session.run(init)
 
+# Load training data and resize
+train_images, train_labels = load_data(training_dir)
+train_images = resize_images(train_images)
+
+# Load testing data and resize
+test_images, test_labels = load_data(testing_dir)
+test_images = resize_images(test_images)
+
 for i in range(301):
     _, loss_value = session.run(
         [train, loss],
-        feed_dict={images_ph: resized_images, labels_ph: labels})
+        feed_dict={images_ph: train_images, labels_ph: train_labels})
     if i % 10 == 0:
         print("Loss: ", loss_value)
 
-
-
-test_images, test_labels = load_data(testing_dir)
-resized_test_images = resize_images(test_images)
-display_images_and_labels(resized_test_images, test_labels)
-
 # Run predictions against the full test set.
-predicted = session.run([predicted_labels], feed_dict={images_ph: resized_test_images})[0]
+predicted = session.run([predicted_labels], feed_dict={images_ph: test_images, labels_ph: test_labels})[0]
 # Calculate how many matches we got.
 match_count = sum([int(y == y_) for y, y_ in zip(test_labels, predicted)])
-accuracy = match_count / len(test_labels)
+accuracy = float(match_count) / len(test_labels)
 print("Accuracy: {:.3f}".format(accuracy))
 
 session.close()

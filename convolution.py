@@ -1,5 +1,6 @@
 # https://www.tensorflow.org/get_started/mnist/pros#train_and_evaluate_the_model
 # https://github.com/Hvass-Labs/TensorFlow-Tutorials/blob/master/02_Convolutional_Neural_Network.ipynb
+# https://medium.com/@waleedka/traffic-sign-recognition-with-tensorflow-629dffc391a6
 
 import cv2
 import os
@@ -19,6 +20,7 @@ num_channels = 1
 num_classes = 62
 
 # CNN layers information.
+
 # Convolutional Layer 1.
 kernel_size1 = 5
 num_filters1 = 6
@@ -57,9 +59,7 @@ train_labels = np.eye(num_classes)[train_labels]
 # Load testing data and resize
 test_images, test_labels = load_data(testing_dir)
 test_images = resize_images(test_images)
-
-
-# test_labels = np.eye(num_classes)[test_labels]
+test_labels = np.eye(num_classes)[test_labels]
 
 
 def make_weights(shape):
@@ -106,6 +106,7 @@ with graph.as_default():
 
     h_conv2 = convolution(h_pool1, kernel_size2, num_filters1, num_filters2)
     h_pool2 = pool(h_conv2)
+
     shape = h_pool2.get_shape().as_list()
     h_pool2_flat = tf.reshape(h_pool2, [-1, np.prod(shape[1:4])])
 
