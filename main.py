@@ -20,17 +20,13 @@ def load_data(dir):
         files = [os.path.join(sub, o) for o in os.listdir(sub) if o.endswith(".ppm")]
         label = os.path.basename(sub)[:-1].lstrip("0") + os.path.basename(sub)[-1]
         for image in files:
-            images.append(cv2.imread(image, 0))
+            images.append(cv2.imread(image, 0).astype(np.float32) / 255.)
             labels.append(int(label))
     return images, labels
 
 
 def resize_images(images, width=32, height=32):
-    output = []
-    for image in images:
-        image = cv2.resize(image, (width, height), interpolation=cv2.INTER_CUBIC)
-        output.append(image)
-    return output
+    return [cv2.resize(image, (width, height), interpolation=cv2.INTER_CUBIC) for image in images]
 
 
 def display_images_and_labels(images, labels):
@@ -67,7 +63,7 @@ with graph.as_default():
 
     # Fully connected layer.
     # Generates logits of size [None, 62]
-    logits = tf.contrib.layers.fully_connected(images_flat, 62, tf.nn.sigmoid)
+    logits = tf.contrib.layers.fully_connected(images_flat, 62, tf.nn.relu)
 
     # Convert logits to label indexes (int).
     # Shape [None], which is a 1D vector of length == batch_size.
@@ -81,7 +77,6 @@ with graph.as_default():
     train = tf.train.AdamOptimizer(learning_rate=0.001).minimize(loss)
 
     # And, finally, an initialization op to execute before training.
-    # TODO: rename to tf.global_variables_initializer() on TF 0.12.
     init = tf.global_variables_initializer()
 
 session = tf.Session(graph=graph)

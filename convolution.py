@@ -20,12 +20,12 @@ num_classes = 62
 
 # CNN layers information.
 # Convolutional Layer 1.
-kernel_size1 = 3
-num_filters1 = 16
+kernel_size1 = 5
+num_filters1 = 6
 
 # Convolutional Layer 2.
-kernel_size2 = 3
-num_filters2 = 36
+kernel_size2 = 5
+num_filters2 = 16
 
 # Fully-connected layer.
 fc_size = 128  # Number of neurons in fully-connected layer.
@@ -46,11 +46,7 @@ def load_data(dir):
 
 
 def resize_images(images, width=32, height=32):
-    output = []
-    for image in images:
-        image = cv2.resize(image, (width, height), interpolation=cv2.INTER_CUBIC)
-        output.append(image)
-    return output
+    return [cv2.resize(image, (width, height), interpolation=cv2.INTER_CUBIC) for image in images]
 
 
 # Load training data and resize
@@ -119,7 +115,8 @@ with graph.as_default():
 
     loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=h_fc2, labels=y))
     optimizer = tf.train.AdamOptimizer(1e-4).minimize(loss)
-    correct = tf.equal(tf.argmax(h_fc2, 1), tf.argmax(y, 1))
+    predicted_labels = tf.argmax(h_fc2, 1)
+    correct = tf.equal(predicted_labels, tf.argmax(y, 1))
     accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
 
     init = tf.global_variables_initializer()
@@ -143,3 +140,4 @@ for i in range(201):
 
 end_time = time.time()
 print "Time usage: " + str(timedelta(seconds=int(round(end_time - start_time))))
+session.close()
