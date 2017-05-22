@@ -1,13 +1,13 @@
-import random
-
-import tensorflow as tf
-import matplotlib.pyplot as plt
-import numpy as np
-import cv2
-import os
-
 # https://www.tensorflow.org/get_started/mnist/pros#train_and_evaluate_the_model
 # https://github.com/Hvass-Labs/TensorFlow-Tutorials/blob/master/02_Convolutional_Neural_Network.ipynb
+
+import cv2
+import os
+import time
+from datetime import timedelta
+
+import numpy as np
+import tensorflow as tf
 
 # Dataset locations.
 training_dir = "dataset/Training/"
@@ -15,7 +15,6 @@ testing_dir = "dataset/Testing/"
 
 # Data dimensions information.
 img_size = 32
-img_size_flat = img_size * img_size
 num_channels = 1
 num_classes = 62
 
@@ -57,10 +56,14 @@ def resize_images(images, width=32, height=32):
 # Load training data and resize
 train_images, train_labels = load_data(training_dir)
 train_images = resize_images(train_images)
+train_labels = np.eye(num_classes)[train_labels]
 
 # Load testing data and resize
 test_images, test_labels = load_data(testing_dir)
 test_images = resize_images(test_images)
+
+
+# test_labels = np.eye(num_classes)[test_labels]
 
 
 def make_weights(shape):
@@ -114,11 +117,9 @@ with graph.as_default():
     h_fc1 = fully_connected(h_pool2_flat, np.prod(shape[1:4]), fc_size)
     h_fc2 = fully_connected(h_fc1, fc_size, num_classes)
 
-    pred = tf.argmax(h_fc2, 1)
-
     loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=h_fc2, labels=y))
-    train = tf.train.AdamOptimizer(1e-4).minimize(loss)
-    correct = tf.equal(pred, tf.argmax(y, 1))
+    optimizer = tf.train.AdamOptimizer(1e-4).minimize(loss)
+    correct = tf.equal(tf.argmax(h_fc2, 1), tf.argmax(y, 1))
     accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
 
     init = tf.global_variables_initializer()
@@ -126,23 +127,19 @@ with graph.as_default():
 session = tf.Session(graph=graph)
 session.run(init)
 
+# Training.
+start_time = time.time()
+
 for i in range(201):
-    # x_batch, y_true_batch = data.train.next_batch(50)
-    _, loss_value = session.run(
-        [train, loss],
-        feed_dict={x: train_images, y: train_labels})
+    session.run(optimizer, feed_dict={x: train_images,
+                                      y: train_labels})
+    # Print status every 10 iterations.
     if i % 10 == 0:
-        print("Loss: ", loss_value)
+        # Calculate the accuracy.
+        acc = session.run(accuracy, feed_dict={x: train_images,
+                                               y: train_labels})
+        msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.1%}"
+        print msg.format(i + 1, acc)
 
-# Pick 10 random images
-sample_indexes = random.sample(range(len(train_images)), 10)
-sample_images = [train_images[i] for i in sample_indexes]
-sample_labels = [train_labels[i] for i in sample_indexes]
-
-# Run the "predicted_labels" op.
-predicted = session.run(pred,
-                        {x: sample_images})
-print(sample_labels)
-print(predicted)
-
-session.close()
+end_time = time.time()
+print "Time usage: " + str(timedelta(seconds=int(round(end_time - start_time))))
