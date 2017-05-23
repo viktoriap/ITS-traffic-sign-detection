@@ -94,60 +94,88 @@ def fully_connected(in_data, num_inputs, num_outputs):
     return fc_layer
 
 
-graph = tf.Graph()
+def train():
+    graph = tf.Graph()
 
-with graph.as_default():
-    x = tf.placeholder(tf.float32, [None, img_size, img_size])
-    x_image = tf.reshape(x, [-1, img_size, img_size, num_channels])
-    y = tf.placeholder(tf.float32, [None, num_classes])
+    with graph.as_default():
+        x = tf.placeholder(tf.float32, [None, img_size, img_size], name="images")
+        x_image = tf.reshape(x, [-1, img_size, img_size, num_channels], name="labels")
+        y = tf.placeholder(tf.float32, [None, num_classes])
 
-    # Convolution and maxpooling.
-    h_conv1 = convolution(x_image, kernel_size1, num_channels, num_filters1)
-    h_pool1 = pool(h_conv1)
+        # Convolution and maxpooling.
+        h_conv1 = convolution(x_image, kernel_size1, num_channels, num_filters1)
+        h_pool1 = pool(h_conv1)
 
-    h_conv2 = convolution(h_pool1, kernel_size2, num_filters1, num_filters2)
-    h_pool2 = pool(h_conv2)
+        h_conv2 = convolution(h_pool1, kernel_size2, num_filters1, num_filters2)
+        h_pool2 = pool(h_conv2)
 
-    shape = h_pool2.get_shape().as_list()
-    h_pool2_flat = tf.reshape(h_pool2, [-1, np.prod(shape[1:4])])
+        shape = h_pool2.get_shape().as_list()
+        h_pool2_flat = tf.reshape(h_pool2, [-1, np.prod(shape[1:4])])
 
-    # Fully-connected.
-    h_fc1 = fully_connected(h_pool2_flat, np.prod(shape[1:4]), fc_size)
-    h_fc2 = fully_connected(h_fc1, fc_size, num_classes)
+        # Fully-connected.
+        h_fc1 = fully_connected(h_pool2_flat, np.prod(shape[1:4]), fc_size)
+        h_fc2 = fully_connected(h_fc1, fc_size, num_classes)
 
-    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=h_fc2, labels=y))
-    optimizer = tf.train.AdamOptimizer(1e-4).minimize(loss)
-    predicted_labels = tf.argmax(h_fc2, 1)
-    correct = tf.equal(predicted_labels, tf.argmax(y, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=h_fc2, labels=y))
+        optimizer = tf.train.AdamOptimizer(1e-4).minimize(loss)
+        predicted_labels = tf.argmax(h_fc2, 1, name="predicted")
+        correct = tf.equal(predicted_labels, tf.argmax(y, 1))
+        accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
 
-    init = tf.global_variables_initializer()
+        init = tf.global_variables_initializer()
 
-session = tf.Session(graph=graph)
-session.run(init)
+    print "Training started ... "
+    with tf.Session(graph=graph) as session:
+        session.run(init)
+        start_time = time.time()
 
-# Training.
-start_time = time.time()
+        for i in range(201):
+            session.run(optimizer, feed_dict={x: train_images,
+                                              y: train_labels})
+            # Print status every 10 iterations.
+            if i % 10 == 0:
+                # Calculate the accuracy.
+                acc = session.run(accuracy, feed_dict={x: train_images,
+                                                       y: train_labels})
+                msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.1%}"
+                print msg.format(i + 1, acc)
 
-for i in range(201):
-    session.run(optimizer, feed_dict={x: train_images,
-                                      y: train_labels})
-    # Print status every 10 iterations.
-    if i % 10 == 0:
-        # Calculate the accuracy.
-        acc = session.run(accuracy, feed_dict={x: train_images,
-                                               y: train_labels})
-        msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.1%}"
-        print msg.format(i + 1, acc)
+        end_time = time.time()
+        print "Time usage: " + str(timedelta(seconds=int(round(end_time - start_time))))
 
-end_time = time.time()
-print "Time usage: " + str(timedelta(seconds=int(round(end_time - start_time))))
-session.close()
+        # Save the variables to disk.
+        save_path = tf.train.Saver().save(session, "models/model-cnn.ckpt")
+        print("Model saved in file: %s" % save_path)
+        session.close()
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--input",
-                    help="The image file for which the user wants to know the traffic sign",
-                    nargs="+",
-                    required=True)
-parser.parse_args()
+def restore(filepath):
+    with tf.Session() as session:
+        # Restore variables from disk.
+        saver = tf.train.import_meta_graph('models/model-cnn.ckpt.meta')
+        saver.restore(session, tf.train.latest_checkpoint('models/'))
+        print "Model restored ... "
+
+        session.run(tf.global_variables_initializer())
+
+        # Load image and resize
+        # TODO: many files at once
+        dir = filepath[0].split("/")[-2]
+        label = [int(dir[:-1].lstrip("0") + dir[-1])]
+        image = cv2.imread(filepath[0], 0)
+        image = resize_images(image)
+
+        graph = tf.get_default_graph()
+
+        x = graph.get_tensor_by_name("x:0")
+        print label
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--input",
+                        help="The image file for which the user wants to know the traffic sign",
+                        nargs="+",
+                        required=True)
+    args = parser.parse_args()
+    train()
