@@ -53,8 +53,8 @@ def train():
     # Create model in the graph.
     with graph.as_default():
         # Placeholders for inputs and labels.
-        images_ph = tf.placeholder(tf.float32, [None, 32, 32], name="images_ph")
-        labels_ph = tf.placeholder(tf.int32, [None], name="labels_ph")
+        images_ph = tf.placeholder(tf.float32, shape=[None, 32, 32], name="images_ph")
+        labels_ph = tf.placeholder(tf.int32, shape=[None], name="labels_ph")
 
         # Flatten input from: [None, height, width, channels]
         # To: [None, height * width * channels] == [None, 3072]
@@ -66,7 +66,7 @@ def train():
 
         # Convert logits to label indexes (int).
         # Shape [None], which is a 1D vector of length == batch_size.
-        predicted_labels = tf.argmax(logits, 1)
+        predicted_labels = tf.argmax(logits, 1, name="predicted_ph")
 
         # Define the loss function.
         # Cross-entropy is a good choice for classification.
@@ -121,17 +121,19 @@ def restore(filename):
         # Load image and resize
         # TODO: many files at once
         dir = filename[0].split("/")[-2]
-        label = int(dir[:-1].lstrip("0") + dir[-1])
-        image = cv2.imread(filename[0], 0).astype(np.float32) / 255.
-        image = resize_images(image)[0]
+        label = [int(dir[:-1].lstrip("0") + dir[-1])]
+        image = [cv2.imread(filename[0], 0).astype(np.float32) / 255.]
+        image = resize_images(image)
 
         graph = tf.get_default_graph()
-        images_ph = graph.get_tensor_by_name("images_ph")
-        labels_ph = graph.get_tensor_by_name("labels_ph")
+
+        images_ph = graph.get_tensor_by_name("images_ph:0")
+        labels_ph = graph.get_tensor_by_name("labels_ph:0")
+        predicted_labels = graph.get_tensor_by_name("predicted_ph:0")
 
         # Run predictions against the full test set.
         prediction = session.run([predicted_labels], feed_dict={images_ph: image, labels_ph: label})[0]
-        return prediction
+        return label, prediction
 
 
 if __name__ == "__main__":
@@ -147,5 +149,7 @@ if __name__ == "__main__":
 
     if args.train:
         train()
-    else:
-        restore(args.input)
+
+    label, prediction = restore(args.input)
+    for i in range(len(label)):
+        print label[i], " - ", prediction[i]
