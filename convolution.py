@@ -10,6 +10,7 @@ import argparse
 
 import numpy as np
 import tensorflow as tf
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 # Dataset locations.
 training_dir = "dataset/Training/"
@@ -129,7 +130,7 @@ def train():
         session.run(init)
         start_time = time.time()
 
-        for i in range(201):
+        for i in range(301):
             session.run(optimizer, feed_dict={x: train_images,
                                               y: train_labels})
             # Print status every 10 iterations.

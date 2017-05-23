@@ -8,6 +8,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import cv2
 import tensorflow as tf
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 training_dir = "dataset/Training/"
 testing_dir = "dataset/Testing/"
