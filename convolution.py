@@ -1,7 +1,7 @@
 # https://www.tensorflow.org/get_started/mnist/pros#train_and_evaluate_the_model
 # https://github.com/Hvass-Labs/TensorFlow-Tutorials/blob/master/02_Convolutional_Neural_Network.ipynb
 # https://medium.com/@waleedka/traffic-sign-recognition-with-tensorflow-629dffc391a6
-
+import csv
 import cv2
 import os
 import time
@@ -99,8 +99,8 @@ def train():
 
     with graph.as_default():
         x = tf.placeholder(tf.float32, [None, img_size, img_size], name="images")
-        x_image = tf.reshape(x, [-1, img_size, img_size, num_channels], name="labels")
-        y = tf.placeholder(tf.float32, [None, num_classes])
+        x_image = tf.reshape(x, [-1, img_size, img_size, num_channels])
+        y = tf.placeholder(tf.float32, [None, num_classes], name="labels")
 
         # Convolution and maxpooling.
         h_conv1 = convolution(x_image, kernel_size1, num_channels, num_filters1)
@@ -149,7 +149,7 @@ def train():
         session.close()
 
 
-def restore(filepath):
+def restore(filepaths):
     with tf.Session() as session:
         # Restore variables from disk.
         saver = tf.train.import_meta_graph('models/model-cnn.ckpt.meta')
@@ -158,17 +158,43 @@ def restore(filepath):
 
         session.run(tf.global_variables_initializer())
 
-        # Load image and resize
-        # TODO: many files at once
-        dir = filepath[0].split("/")[-2]
-        label = [int(dir[:-1].lstrip("0") + dir[-1])]
-        image = cv2.imread(filepath[0], 0)
-        image = resize_images(image)
+        images = []
+        for f in filepaths:
+            if os.path.isfile(f):
+                image = cv2.imread(f, 0)
+                images.append(image)
+            else:
+                print "No such file: %s" % f
+
+        labels = []
+        for f in filepaths:
+            dir = f.split("/")[-2]
+            label = int(dir[:-1].lstrip("0") + dir[-1])
+            labels.append(label)
+
+        images = resize_images(images)
+        labels = np.eye(num_classes)[labels]
 
         graph = tf.get_default_graph()
 
-        x = graph.get_tensor_by_name("x:0")
-        print label
+        x = graph.get_tensor_by_name("images:0")
+        y = graph.get_tensor_by_name("labels:0")
+        predicted_labels = graph.get_tensor_by_name("predicted:0")
+
+        prediction = session.run([predicted_labels], feed_dict={x: images, y: labels})[0]
+        labels = labels.nonzero()[1]
+        return labels, prediction
+
+
+def label_names(labels, filename):
+    with open(filename, 'rb') as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quotechar='|')
+        data = {int(rows[0]): rows[1] for rows in reader}
+        output = []
+        for key in labels:
+            output.append(data.get(key))
+
+        return output
 
 
 if __name__ == "__main__":
@@ -177,5 +203,18 @@ if __name__ == "__main__":
                         help="The image file for which the user wants to know the traffic sign",
                         nargs="+",
                         required=True)
+    parser.add_argument("-t", "--train",
+                        help="Train the model, else use a previous model",
+                        action="store_true")
     args = parser.parse_args()
-    train()
+
+    if args.train:
+        train()
+
+    labels, predictions = restore(args.input)
+    labels_text = label_names(labels, "SignLabels.csv")
+    prediction_text = label_names(predictions, "SignLabels.csv")
+
+    print "Correct label\t-\tPrediction"
+    for i in range(len(labels_text)):
+        print labels_text[i], "\t-\t ", prediction_text[i]
