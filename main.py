@@ -2,6 +2,7 @@ import os
 import argparse
 
 import numpy as np
+import csv
 import random
 import matplotlib
 import matplotlib.pyplot as plt
@@ -136,6 +137,17 @@ def restore(filename):
         return label, prediction
 
 
+def label_names(labels, filename):
+    with open(filename, 'rb') as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quotechar='|')
+        data = {int(rows[0]): rows[1] for rows in reader}
+        output = []
+        for key in labels:
+            output.append(data.get(key))
+
+        return output
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input",
@@ -150,6 +162,10 @@ if __name__ == "__main__":
     if args.train:
         train()
 
-    label, prediction = restore(args.input)
-    for i in range(len(label)):
-        print label[i], " - ", prediction[i]
+    labels, predictions = restore(args.input)
+    labels_text = label_names(labels, "SignLabels.csv")
+    prediction_text = label_names(predictions, "SignLabels.csv")
+
+    print "Correct label  -  Prediction"
+    for i in range(len(labels_text)):
+        print labels_text[i], " - ", prediction_text[i]
