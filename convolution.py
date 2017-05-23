@@ -6,6 +6,7 @@ import cv2
 import os
 import time
 from datetime import timedelta
+import argparse
 
 import numpy as np
 import tensorflow as tf
@@ -142,3 +143,11 @@ for i in range(201):
 end_time = time.time()
 print "Time usage: " + str(timedelta(seconds=int(round(end_time - start_time))))
 session.close()
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-i", "--input",
+                    help="The image file for which the user wants to know the traffic sign",
+                    nargs="+",
+                    required=True)
+parser.parse_args()
