@@ -96,20 +96,18 @@ def train():
         save_path = tf.train.Saver().save(session, "model.ckpt")
         print("Model saved in file: %s" % save_path)
 
+        # Load testing data and resize
+        test_images, test_labels = load_data(testing_dir)
+        test_images = resize_images(test_images)
+        # Run predictions against the full test set.
+        predicted = session.run([predicted_labels], feed_dict={images_ph: test_images, labels_ph: test_labels})[0]
+        # Calculate how many matches we got.
+        match_count = sum([int(y == y_) for y, y_ in zip(test_labels, predicted)])
+        accuracy = float(match_count) / len(test_labels)
+        print("Accuracy: {:.3f}".format(accuracy))
 
-# # Load testing data and resize
-# test_images, test_labels = load_data(testing_dir)
-# test_images = resize_images(test_images)
-# Run predictions against the full test set.
-# predicted = session.run([predicted_labels], feed_dict={images_ph: test_images, labels_ph: test_labels})[0]
-# # Calculate how many matches we got.
-# match_count = sum([int(y == y_) for y, y_ in zip(test_labels, predicted)])
-# accuracy = float(match_count) / len(test_labels)
-# print("Accuracy: {:.3f}".format(accuracy))
-#
-# session.close()
 
-def restore(filename):
+def restore(filenames):
     with tf.Session() as session:
         # Restore variables from disk.
         saver = tf.train.import_meta_graph('model.ckpt.meta')
@@ -120,11 +118,21 @@ def restore(filename):
         session.run(tf.global_variables_initializer())
 
         # Load image and resize
-        # TODO: many files at once
-        dir = filename[0].split("/")[-2]
-        label = [int(dir[:-1].lstrip("0") + dir[-1])]
-        image = [cv2.imread(filename[0], 0).astype(np.float32) / 255.]
-        image = resize_images(image)
+        images = []
+        for f in filenames:
+            if os.path.isfile(f):
+                image = cv2.imread(f, 0).astype(np.float32) / 255.
+                images.append(image)
+            else:
+                print "No such file: %s" % f
+
+        labels = []
+        for f in filenames:
+            dir = f.split("/")[-2]
+            label = int(dir[:-1].lstrip("0") + dir[-1])
+            labels.append(label)
+
+        images = resize_images(images)
 
         graph = tf.get_default_graph()
 
@@ -133,8 +141,8 @@ def restore(filename):
         predicted_labels = graph.get_tensor_by_name("predicted_ph:0")
 
         # Run predictions against the full test set.
-        prediction = session.run([predicted_labels], feed_dict={images_ph: image, labels_ph: label})[0]
-        return label, prediction
+        prediction = session.run([predicted_labels], feed_dict={images_ph: images, labels_ph: labels})[0]
+        return labels, prediction
 
 
 def label_names(labels, filename):
@@ -166,6 +174,6 @@ if __name__ == "__main__":
     labels_text = label_names(labels, "SignLabels.csv")
     prediction_text = label_names(predictions, "SignLabels.csv")
 
-    print "Correct label  -  Prediction"
+    print "Correct label\t-\t Prediction"
     for i in range(len(labels_text)):
-        print labels_text[i], " - ", prediction_text[i]
+        print labels_text[i], "\t-\t ", prediction_text[i]
