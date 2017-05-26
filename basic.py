@@ -1,3 +1,5 @@
+# https://medium.com/@waleedka/traffic-sign-recognition-with-tensorflow-629dffc391a6
+
 import os
 import argparse
 
@@ -8,6 +10,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import cv2
 import tensorflow as tf
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 training_dir = "dataset/Training/"
@@ -30,22 +33,6 @@ def load_data(dir):
 
 def resize_images(images, width=32, height=32):
     return [cv2.resize(image, (width, height), interpolation=cv2.INTER_CUBIC) for image in images]
-
-
-def display_images_and_labels(images, labels):
-    """Display the first image of each label."""
-    unique_labels = set(labels)
-    plt.figure(figsize=(15, 15))
-    i = 1
-    for label in unique_labels:
-        # Pick the first image for each label.
-        image = images[labels.index(label)]
-        plt.subplot(8, 8, i)  # A grid of 8 rows x 8 columns
-        plt.axis('off')
-        plt.title("Label {0} ({1})".format(label, labels.count(label)))
-        i += 1
-        _ = plt.imshow(image)
-    plt.show()
 
 
 def train():
